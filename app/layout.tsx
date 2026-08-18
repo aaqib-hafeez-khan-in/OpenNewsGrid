@@ -5,21 +5,28 @@ import { Footer } from "@/components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Global News Daily - Real-Time World News Aggregation",
+  title: "OpenNewsGrid - Real-Time World News Aggregation",
   description:
     "Get breaking news and top stories from thousands of global sources. Real-time news aggregation from around the world.",
   keywords:
     "news, global news, breaking news, world news, international news, headlines",
-  authors: [{ name: "Global News Daily" }],
+  authors: [{ name: "OpenNewsGrid" }],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: ["/favicon.svg"],
+    apple: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
   openGraph: {
-    title: "Global News Daily",
+    title: "OpenNewsGrid",
     description: "Real-Time World News Aggregation",
     type: "website",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Global News Daily",
+    title: "OpenNewsGrid",
     description: "Real-Time World News Aggregation",
   },
   robots: {
