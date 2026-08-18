@@ -118,7 +118,7 @@ async function fetchFeed(feed: RSSFeed): Promise<NewsArticle[]> {
   try {
     const parsed = await parser.parseURL(feed.url);
     const articles = (parsed.items || [])
-      .map((item) => normalizeItem(item as Record<string, unknown>, feed))
+      .map((item) => normalizeItem(item as unknown as Record<string, unknown>, feed))
       .filter((article): article is NewsArticle => article !== null);
     globalCache.set(cacheKey, articles, FEED_CACHE_TTL);
     return articles;
