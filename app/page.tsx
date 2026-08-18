@@ -1,15 +1,14 @@
 import { BreakingNews } from "@/components/breaking-news";
 import { NewsGrid } from "@/components/news-grid";
-import { getBreakingNews, getTopStories, getNewsByCategory } from "@/lib/news-aggregator";
+import { getTopStories } from "@/lib/news-aggregator";
 import { getArticleHref, getSourceFavicon } from "@/lib/url-utils";
 import Link from "next/link";
 import Image from "next/image";
 import { TrendingUp, Globe, ExternalLink } from "lucide-react";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
-function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getNewsByCategory>>[number] }) {
+function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getTopStories>>[number]["primaryArticle"] }) {
   const href = getArticleHref(article);
   if (!href) return null;
   const favicon = getSourceFavicon(article.source.url);
@@ -33,16 +32,16 @@ function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getNewsB
 }
 
 export default async function HomePage() {
-  const [breakingNews, topStories, worldNews, techNews, businessNews] = await Promise.all([
-    getBreakingNews(8),
-    getTopStories(undefined, 13),
-    getNewsByCategory("world", 1, 5),
-    getNewsByCategory("technology", 1, 5),
-    getNewsByCategory("business", 1, 5),
-  ]);
-
-  const featuredStory = topStories[0];
-  const mainGridStories = topStories.slice(1, 7);
+  const stories = await getTopStories(undefined, 39);
+  const featuredStory = stories[0];
+  const mainGridStories = stories.slice(1, 7);
+  const worldNews = stories.filter((story) => story.category === "world").slice(0, 5).map((story) => story.primaryArticle);
+  const techNews = stories.filter((story) => story.category === "technology").slice(0, 4).map((story) => story.primaryArticle);
+  const businessNews = stories.filter((story) => story.category === "business").slice(0, 4).map((story) => story.primaryArticle);
+  const breakingNews = stories
+    .filter((story) => Date.now() - new Date(story.publishedAt).getTime() >= 0 && Date.now() - new Date(story.publishedAt).getTime() <= 24 * 60 * 60 * 1000)
+    .slice(0, 8)
+    .map((story) => story.primaryArticle);
   const keywords = featuredStory?.keywords?.slice(0, 8) || [];
 
   return (
@@ -73,13 +72,15 @@ export default async function HomePage() {
               <NewsGrid stories={mainGridStories} variant="default" columns={2} showFeatured={false} />
             </section>
 
-            <section className="mb-12">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">World News</h2>
-                <Link href="/world" className="text-sm font-medium text-primary hover:text-primary-dark">More World →</Link>
-              </div>
-              <NewsGrid articles={worldNews} variant="horizontal" columns={1} showFeatured={false} />
-            </section>
+            {worldNews.length > 0 && (
+              <section className="mb-12">
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">World News</h2>
+                  <Link href="/world" className="text-sm font-medium text-primary hover:text-primary-dark">More World →</Link>
+                </div>
+                <NewsGrid articles={worldNews} variant="horizontal" columns={1} showFeatured={false} />
+              </section>
+            )}
           </div>
 
           <aside className="space-y-8">
@@ -96,21 +97,25 @@ export default async function HomePage() {
               </div>
             )}
 
-            <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 dark:text-white">Technology</h3>
-                <Link href="/technology" className="text-sm text-primary">More →</Link>
-              </div>
-              <div className="space-y-4">{techNews.slice(0, 4).map((article) => <SidebarStory key={article.id} article={article} />)}</div>
-            </section>
+            {techNews.length > 0 && (
+              <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 dark:text-white">Technology</h3>
+                  <Link href="/technology" className="text-sm text-primary">More →</Link>
+                </div>
+                <div className="space-y-4">{techNews.map((article) => <SidebarStory key={article.id} article={article} />)}</div>
+              </section>
+            )}
 
-            <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 dark:text-white">Business</h3>
-                <Link href="/business" className="text-sm text-primary">More →</Link>
-              </div>
-              <div className="space-y-4">{businessNews.slice(0, 4).map((article) => <SidebarStory key={article.id} article={article} />)}</div>
-            </section>
+            {businessNews.length > 0 && (
+              <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 dark:text-white">Business</h3>
+                  <Link href="/business" className="text-sm text-primary">More →</Link>
+                </div>
+                <div className="space-y-4">{businessNews.map((article) => <SidebarStory key={article.id} article={article} />)}</div>
+              </section>
+            )}
 
             <div className="rounded-xl bg-primary p-6 text-white shadow">
               <h3 className="mb-2 text-lg font-bold">OpenNewsGrid</h3>
