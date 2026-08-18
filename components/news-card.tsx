@@ -45,14 +45,12 @@ export function NewsCard({
   const sourceLabel = hasMultipleSources
     ? `${data.sources.length} sources`
     : data.sources[0]?.name;
+  const articleHref = `/article?url=${encodeURIComponent(data.primaryArticle.url)}`;
 
   if (variant === "featured") {
     return (
       <article className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300">
-        <Link
-          href={`/article/${encodeURIComponent(data.primaryArticle.url)}`}
-          className="block"
-        >
+        <Link href={articleHref} className="block">
           <div className="grid md:grid-cols-2 gap-0">
             <div className="relative h-64 md:h-full min-h-[300px] overflow-hidden">
               <Image
@@ -104,10 +102,7 @@ export function NewsCard({
   if (variant === "horizontal") {
     return (
       <article className="group flex gap-4 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow hover:shadow-lg transition-all duration-300">
-        <Link
-          href={`/article/${encodeURIComponent(data.primaryArticle.url)}`}
-          className="flex gap-4 flex-1 p-4"
-        >
+        <Link href={articleHref} className="flex gap-4 flex-1 p-4">
           <div className="relative w-32 h-24 md:w-40 md:h-28 shrink-0 rounded-lg overflow-hidden">
             <Image
               src={data.imageUrl}
@@ -144,7 +139,7 @@ export function NewsCard({
     return (
       <article className="group">
         <Link
-          href={`/article/${encodeURIComponent(data.primaryArticle.url)}`}
+          href={articleHref}
           className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
         >
           <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden">
@@ -171,13 +166,9 @@ export function NewsCard({
     );
   }
 
-  // Default card
   return (
     <article className="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow hover:shadow-xl transition-all duration-300 news-card">
-      <Link
-        href={`/article/${encodeURIComponent(data.primaryArticle.url)}`}
-        className="block"
-      >
+      <Link href={articleHref} className="block">
         <div className="relative h-48 overflow-hidden image-zoom">
           <Image
             src={data.imageUrl}
