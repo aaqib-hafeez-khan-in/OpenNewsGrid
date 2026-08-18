@@ -1,6 +1,6 @@
 import { BreakingNews } from "@/components/breaking-news";
 import { NewsGrid } from "@/components/news-grid";
-import { getTopStories } from "@/lib/news-aggregator";
+import { getFastHomepageStories } from "@/lib/fast-homepage-feed";
 import { getArticleHref, getSourceFavicon } from "@/lib/url-utils";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import { TrendingUp, Globe, ExternalLink } from "lucide-react";
 
 export const revalidate = 60;
 
-function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getTopStories>>[number]["primaryArticle"] }) {
+function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getFastHomepageStories>>[number]["primaryArticle"] }) {
   const href = getArticleHref(article);
   if (!href) return null;
   const favicon = getSourceFavicon(article.source.url);
@@ -16,7 +16,7 @@ function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getTopSt
   return (
     <Link href={href} className="group flex gap-3">
       <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md">
-        <Image src={article.imageUrl} alt={article.title} fill className="object-cover" sizes="80px" />
+        {article.imageUrl ? <Image src={article.imageUrl} alt={article.title} fill className="object-cover" sizes="80px" /> : null}
       </div>
       <div className="min-w-0">
         <h4 className="line-clamp-2 text-sm font-medium text-gray-900 transition-colors group-hover:text-primary dark:text-white">
@@ -32,7 +32,7 @@ function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getTopSt
 }
 
 export default async function HomePage() {
-  const stories = await getTopStories(undefined, 39);
+  const stories = await getFastHomepageStories(39);
   const featuredStory = stories[0];
   const mainGridStories = stories.slice(1, 7);
   const worldNews = stories.filter((story) => story.category === "world").slice(0, 5).map((story) => story.primaryArticle);
