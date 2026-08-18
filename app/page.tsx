@@ -1,204 +1,123 @@
 import { BreakingNews } from "@/components/breaking-news";
 import { NewsGrid } from "@/components/news-grid";
-import {
-  getBreakingNews,
-  getTopStories,
-  getNewsByCategory,
-} from "@/lib/news-aggregator";
-import { CATEGORIES } from "@/lib/constants";
+import { getBreakingNews, getTopStories, getNewsByCategory } from "@/lib/news-aggregator";
+import { getArticleHref, getSourceFavicon } from "@/lib/url-utils";
 import Link from "next/link";
-import { TrendingUp, Globe, Clock } from "lucide-react";
+import Image from "next/image";
+import { TrendingUp, Globe, ExternalLink } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
+function SidebarStory({ article }: { article: Awaited<ReturnType<typeof getNewsByCategory>>[number] }) {
+  const href = getArticleHref(article);
+  if (!href) return null;
+  const favicon = getSourceFavicon(article.source.url);
+
+  return (
+    <Link href={href} className="group flex gap-3">
+      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md">
+        <Image src={article.imageUrl} alt={article.title} fill className="object-cover" sizes="80px" />
+      </div>
+      <div className="min-w-0">
+        <h4 className="line-clamp-2 text-sm font-medium text-gray-900 transition-colors group-hover:text-primary dark:text-white">
+          {article.title}
+        </h4>
+        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          {favicon ? <img src={favicon} alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm" loading="lazy" /> : null}
+          <span className="truncate">{article.source.name}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default async function HomePage() {
-  const [breakingNews, topStories, worldNews, techNews, businessNews] =
-    await Promise.all([
-      getBreakingNews(8),
-      getTopStories(undefined, 13),
-      getNewsByCategory("world", 1, 5),
-      getNewsByCategory("technology", 1, 5),
-      getNewsByCategory("business", 1, 5),
-    ]);
+  const [breakingNews, topStories, worldNews, techNews, businessNews] = await Promise.all([
+    getBreakingNews(8),
+    getTopStories(undefined, 13),
+    getNewsByCategory("world", 1, 5),
+    getNewsByCategory("technology", 1, 5),
+    getNewsByCategory("business", 1, 5),
+  ]);
 
   const featuredStory = topStories[0];
   const mainGridStories = topStories.slice(1, 7);
+  const keywords = featuredStory?.keywords?.slice(0, 8) || [];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <BreakingNews articles={breakingNews} />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {featuredStory && (
           <section className="mb-12">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-accent" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Top Story
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Top Story</h2>
             </div>
-            <NewsGrid
-              stories={[featuredStory]}
-              variant="default"
-              columns={1}
-              showFeatured={true}
-            />
+            <NewsGrid stories={[featuredStory]} variant="default" columns={1} showFeatured />
           </section>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <section className="mb-12">
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Globe className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Latest Headlines
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Latest Headlines</h2>
                 </div>
-                <Link
-                  href="/general"
-                  className="text-sm font-medium text-primary hover:text-primary-dark transition-colors"
-                >
-                  View All →
-                </Link>
+                <Link href="/general" className="text-sm font-medium text-primary hover:text-primary-dark">View All →</Link>
               </div>
-              <NewsGrid
-                stories={mainGridStories}
-                variant="default"
-                columns={2}
-                showFeatured={false}
-              />
+              <NewsGrid stories={mainGridStories} variant="default" columns={2} showFeatured={false} />
             </section>
 
             <section className="mb-12">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  World News
-                </h2>
-                <Link
-                  href="/world"
-                  className="text-sm font-medium text-primary hover:text-primary-dark transition-colors"
-                >
-                  More World →
-                </Link>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">World News</h2>
+                <Link href="/world" className="text-sm font-medium text-primary hover:text-primary-dark">More World →</Link>
               </div>
-              <NewsGrid
-                articles={worldNews}
-                variant="horizontal"
-                columns={1}
-                showFeatured={false}
-              />
+              <NewsGrid articles={worldNews} variant="horizontal" columns={1} showFeatured={false} />
             </section>
           </div>
 
           <aside className="space-y-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-4">
-                Trending Topics
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {featuredStory?.keywords?.map((keyword) => (
-                  <Link
-                    key={keyword}
-                    href={`/search?q=${encodeURIComponent(keyword)}`}
-                    className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-primary hover:text-white transition-colors"
-                  >
-                    #{keyword}
-                  </Link>
-                )) ||
-                  [
-                    "Politics",
-                    "Technology",
-                    "Climate",
-                    "Economy",
-                    "Sports",
-                  ].map((tag) => (
-                    <Link
-                      key={tag}
-                      href={`/search?q=${tag}`}
-                      className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-primary hover:text-white transition-colors"
-                    >
-                      #{tag}
+            {keywords.length > 0 && (
+              <div className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+                <h3 className="mb-4 font-bold text-gray-900 dark:text-white">Trending Topics</h3>
+                <div className="flex flex-wrap gap-2">
+                  {keywords.map((keyword) => (
+                    <Link key={keyword} href={`/search?q=${encodeURIComponent(keyword)}`} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-primary hover:text-white dark:bg-gray-700 dark:text-gray-300">
+                      #{keyword}
                     </Link>
                   ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 dark:text-white">
-                  Technology
-                </h3>
-                <Link
-                  href="/technology"
-                  className="text-sm text-primary hover:text-primary-dark"
-                >
-                  More →
-                </Link>
+            <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 dark:text-white">Technology</h3>
+                <Link href="/technology" className="text-sm text-primary">More →</Link>
               </div>
-              <div className="space-y-4">
-                {techNews.slice(0, 4).map((article) => (
-                  <Link
-                    key={article.id}
-                    href={`/article/${encodeURIComponent(article.url)}`}
-                    className="block group"
-                  >
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
-                      {article.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {article.source.name}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
+              <div className="space-y-4">{techNews.slice(0, 4).map((article) => <SidebarStory key={article.id} article={article} />)}</div>
+            </section>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-gray-900 dark:text-white">
-                  Business
-                </h3>
-                <Link
-                  href="/business"
-                  className="text-sm text-primary hover:text-primary-dark"
-                >
-                  More →
-                </Link>
+            <section className="rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 dark:text-white">Business</h3>
+                <Link href="/business" className="text-sm text-primary">More →</Link>
               </div>
-              <div className="space-y-4">
-                {businessNews.slice(0, 4).map((article) => (
-                  <Link
-                    key={article.id}
-                    href={`/article/${encodeURIComponent(article.url)}`}
-                    className="block group"
-                  >
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors">
-                      {article.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {article.source.name}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </div>
+              <div className="space-y-4">{businessNews.slice(0, 4).map((article) => <SidebarStory key={article.id} article={article} />)}</div>
+            </section>
 
-            <div className="bg-gradient-to-br from-primary to-primary-dark rounded-xl p-6 text-white">
-              <h3 className="font-bold mb-4">Explore Categories</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {CATEGORIES.slice(1).map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/${cat.slug}`}
-                    className="px-3 py-2 bg-white/10 rounded-lg text-sm hover:bg-white/20 transition-colors"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
-              </div>
+            <div className="rounded-xl bg-primary p-6 text-white shadow">
+              <h3 className="mb-2 text-lg font-bold">OpenNewsGrid</h3>
+              <p className="mb-4 text-sm text-white/80">Live stories collected directly from publisher feeds.</p>
+              <Link href="/search" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-gray-100">
+                Explore News <ExternalLink className="h-4 w-4" />
+              </Link>
             </div>
           </aside>
         </div>
