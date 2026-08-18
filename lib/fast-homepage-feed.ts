@@ -111,7 +111,7 @@ function selectHomepageFeeds(): RSSFeed[] {
 }
 
 async function fetchFeed(feed: RSSFeed): Promise<NewsArticle[]> {
-  const cacheKey = generateCacheKey("fast-rss", feed.url);
+  const cacheKey = generateCacheKey("fast-rss", { url: feed.url });
   const cached = globalCache.get<NewsArticle[]>(cacheKey);
   if (cached) return cached;
 
@@ -163,7 +163,7 @@ function aggregate(articles: NewsArticle[]): AggregatedStory[] {
 }
 
 export async function getFastHomepageStories(limit = 39): Promise<AggregatedStory[]> {
-  const cacheKey = generateCacheKey("homepage-stories", String(limit));
+  const cacheKey = generateCacheKey("homepage-stories", { limit });
   const cached = globalCache.get<AggregatedStory[]>(cacheKey);
   if (cached) return cached;
 
