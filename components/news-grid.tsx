@@ -5,6 +5,7 @@ import { NewsCard } from "./news-card";
 import { NewsCardSkeleton } from "./skeletons";
 import { NewsArticle, AggregatedStory } from "@/types";
 import { Loader2 } from "lucide-react";
+import { isValidHttpUrl } from "@/lib/url-utils";
 
 interface NewsGridProps {
   articles?: NewsArticle[];
@@ -15,6 +16,14 @@ interface NewsGridProps {
   variant?: "default" | "compact" | "horizontal";
   columns?: 1 | 2 | 3 | 4;
   showFeatured?: boolean;
+}
+
+function isRenderableArticle(article: NewsArticle): boolean {
+  return !article.id.startsWith("mock-") && isValidHttpUrl(article.url);
+}
+
+function isRenderableStory(story: AggregatedStory): boolean {
+  return isRenderableArticle(story.primaryArticle);
 }
 
 export function NewsGrid({
@@ -29,27 +38,26 @@ export function NewsGrid({
 }: NewsGridProps) {
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const items =
-    stories ||
-    articles?.map(
-      (a) =>
-        ({
-          id: a.id,
-          headline: a.title,
-          summary: a.description,
-          imageUrl: a.imageUrl,
-          sources: [a.source],
-          primaryArticle: a,
-          relatedArticles: [],
-          category: a.category,
-          countries: [a.country],
-          languages: [a.language],
-          publishedAt: a.publishedAt,
-          keywords: a.keywords || [],
-          readTime: 3,
-        }) as AggregatedStory,
-    ) ||
-    [];
+  const items = stories
+    ? stories.filter(isRenderableStory)
+    : (articles || []).filter(isRenderableArticle).map(
+        (a) =>
+          ({
+            id: a.id,
+            headline: a.title,
+            summary: a.description,
+            imageUrl: a.imageUrl,
+            sources: [a.source],
+            primaryArticle: a,
+            relatedArticles: [],
+            category: a.category,
+            countries: [a.country],
+            languages: [a.language],
+            publishedAt: a.publishedAt,
+            keywords: a.keywords || [],
+            readTime: 3,
+          }) as AggregatedStory,
+      );
 
   const handleLoadMore = async () => {
     if (!onLoadMore || loadingMore) return;
@@ -87,10 +95,10 @@ export function NewsGrid({
     return (
       <div className="text-center py-16">
         <p className="text-gray-500 dark:text-gray-400 text-lg">
-          No news articles found.
+          No live news articles are available right now.
         </p>
         <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-          Try adjusting your filters or check back later.
+          Please try again in a moment.
         </p>
       </div>
     );
@@ -101,14 +109,12 @@ export function NewsGrid({
 
   return (
     <div className="space-y-8">
-      {/* Featured Story */}
       {featuredItem && (
         <div className="mb-8">
           <NewsCard story={featuredItem} variant="featured" />
         </div>
       )}
 
-      {/* Grid */}
       {variant === "horizontal" ? (
         <div className="space-y-4">
           {gridItems.map((item) => (
@@ -129,7 +135,6 @@ export function NewsGrid({
         </div>
       )}
 
-      {/* Load More */}
       {hasMore && onLoadMore && (
         <div className="flex justify-center pt-8">
           <button
