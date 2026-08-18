@@ -48,7 +48,7 @@ function getImage(item: Record<string, unknown>): string | undefined {
   const media = item["media:content"] as { $?: { url?: string }; url?: string } | undefined;
   const thumbnail = item["media:thumbnail"] as { $?: { url?: string }; url?: string } | undefined;
   const enclosure = item.enclosure as { url?: string; type?: string } | undefined;
-  const candidates = [media?.$.url, media?.url, thumbnail?.$.url, thumbnail?.url, enclosure?.url];
+  const candidates = [media?.$?.url, media?.url, thumbnail?.$?.url, thumbnail?.url, enclosure?.url];
   return candidates.find((value) => isValidUrl(value));
 }
 
