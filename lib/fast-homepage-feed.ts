@@ -71,7 +71,7 @@ function normalizeItem(item: Record<string, unknown>, feed: RSSFeed): NewsArticl
   const imageUrl = getImage(item);
 
   return {
-    id: generateId(url),
+    id: generateId(),
     title,
     description: description.trim(),
     content: typeof item.content === "string" ? item.content : undefined,
@@ -118,58 +118,3 @@ async function fetchFeed(feed: RSSFeed): Promise<NewsArticle[]> {
   try {
     const parsed = await parser.parseURL(feed.url);
     const articles = (parsed.items || [])
-      .map((item) => normalizeItem(item as Record<string, unknown>, feed))
-      .filter((article): article is NewsArticle => Boolean(article))
-      .slice(0, 8);
-    globalCache.set(cacheKey, articles, FEED_CACHE_TTL);
-    return articles;
-  } catch {
-    return [];
-  }
-}
-
-function aggregate(articles: NewsArticle[]): AggregatedStory[] {
-  const groups = new Map<string, NewsArticle[]>();
-  for (const article of articles) {
-    const key = article.title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").slice(0, 8).join(" ");
-    if (!key) continue;
-    const group = groups.get(key) || [];
-    group.push(article);
-    groups.set(key, group);
-  }
-
-  return [...groups.values()]
-    .map((group) => {
-      const primaryArticle = [...group].sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())[0];
-      const relatedArticles = group.filter((article) => article.id !== primaryArticle.id).slice(0, 4);
-      const keywords = extractKeywords(group.map((article) => `${article.title} ${article.description}`).join(" ")).slice(0, 10);
-      return {
-        id: generateId(primaryArticle.url),
-        headline: primaryArticle.title,
-        summary: primaryArticle.description,
-        imageUrl: primaryArticle.imageUrl,
-        sources: group.map((article) => article.source),
-        primaryArticle,
-        relatedArticles,
-        category: primaryArticle.category,
-        countries: [...new Set(group.map((article) => article.country))],
-        languages: [...new Set(group.map((article) => article.language))],
-        publishedAt: primaryArticle.publishedAt,
-        keywords,
-        readTime: estimateReadTime(primaryArticle.content || primaryArticle.description),
-      };
-    })
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-}
-
-export async function getFastHomepageStories(limit = 39): Promise<AggregatedStory[]> {
-  const cacheKey = generateCacheKey("homepage-stories", { limit });
-  const cached = globalCache.get<AggregatedStory[]>(cacheKey);
-  if (cached) return cached;
-
-  const feeds = selectHomepageFeeds();
-  const results = await Promise.all(feeds.map(fetchFeed));
-  const stories = aggregate(results.flat()).slice(0, limit);
-  globalCache.set(cacheKey, stories, FEED_CACHE_TTL);
-  return stories;
-}
