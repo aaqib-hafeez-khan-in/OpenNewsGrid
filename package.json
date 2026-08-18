@@ -15,7 +15,7 @@
     "rss-parser": "^3.13.0",
     "xml2js": "^0.6.2",
     "he": "^1.2.0",
-    "date-fns": "^4.0.0",
+    "date-fns": "^4.4.0",
     "lucide-react": "^0.460.0",
     "clsx": "^2.1.0",
     "tailwind-merge": "^2.5.0"
