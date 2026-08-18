@@ -118,3 +118,44 @@ async function fetchFeed(feed: RSSFeed): Promise<NewsArticle[]> {
   try {
     const parsed = await parser.parseURL(feed.url);
     const articles = (parsed.items || [])
+      .map((item) => normalizeItem(item as Record<string, unknown>, feed))
+      .filter((article): article is NewsArticle => article !== null);
+    globalCache.set(cacheKey, articles, FEED_CACHE_TTL);
+    return articles;
+  } catch {
+    return [];
+  }
+}
+
+function toStory(article: NewsArticle): AggregatedStory {
+  return {
+    id: article.id,
+    headline: article.title,
+    summary: article.description,
+    imageUrl: article.imageUrl,
+    sources: [article.source],
+    primaryArticle: article,
+    relatedArticles: [],
+    category: article.category,
+    countries: [article.country],
+    languages: [article.language],
+    publishedAt: article.publishedAt,
+    keywords: article.keywords || [],
+    readTime: estimateReadTime(article.content || article.description),
+  };
+}
+
+export async function getFastHomepageStories(limit = 39): Promise<AggregatedStory[]> {
+  const cacheKey = generateCacheKey("homepage-stories", { limit });
+  const cached = globalCache.get<AggregatedStory[]>(cacheKey);
+  if (cached) return cached;
+
+  const feeds = selectHomepageFeeds();
+  const results = await Promise.all(feeds.map((feed) => fetchFeed(feed)));
+  const articles = results.flat().sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+  );
+  const stories = articles.slice(0, limit).map(toStory);
+  globalCache.set(cacheKey, stories, FEED_CACHE_TTL);
+  return stories;
+}
