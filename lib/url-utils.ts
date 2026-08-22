@@ -8,12 +8,29 @@ export function isValidHttpUrl(value: string | undefined): value is string {
   }
 }
 
-export function getArticleHref(article: { url: string; title: string; description: string; imageUrl: string; source: { name: string; url: string }; publishedAt: string; category: string; country: string; language: string; author?: string; }): string | null {
+function buildPreview(article: { description: string; content?: string }): string {
+  const description = article.description.trim();
+  if (description.length >= 700) return description.slice(0, 1200).trim();
+
+  const content = (article.content || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!content || content === description) return description.slice(0, 1200).trim();
+
+  const combined = `${description} ${content}`.trim();
+  return combined.slice(0, 1200).trim();
+}
+
+export function getArticleHref(article: { url: string; title: string; description: string; content?: string; imageUrl: string; source: { name: string; url: string }; publishedAt: string; category: string; country: string; language: string; author?: string; }): string | null {
   if (!isValidHttpUrl(article.url)) return null;
   const params = new URLSearchParams({
     url: article.url,
     title: article.title.slice(0, 300),
-    description: article.description.slice(0, 500),
+    description: buildPreview(article),
     image: article.imageUrl,
     source: article.source.name,
     sourceUrl: article.source.url,
